@@ -120,3 +120,32 @@ def add_to_workspace(monorepo_path: Path, apps: List[str], packages: List[str]):
             f,
         )
     print(f"Updated workspace in {pubspec_path} with apps and packages.")
+
+
+def create_l10n_yaml(path: Path, is_res: bool, res_package: str) -> bool:
+    """
+    Creates the l10n yaml file
+    return a bool
+    """
+
+    if is_res:
+        arb_dir = "lib/l10n"
+    else:
+        arb_dir = f"../{res_package}/l10n"
+
+    l10n_config = {
+        "arb-dir": arb_dir,
+        "template-arb-file": "app_en.arb",
+        "output-localization-file": "app_localizations.dart",
+        "output-class": "AppLocalizations",
+        "nullable-getter": "false",
+    }
+    l10n_yaml_path = path / "l10n.yaml"
+    yaml = YAML()
+    yaml.indent(mapping=2, sequence=4, offset=2)
+    yaml.preserve_quotes = True
+
+    with open(l10n_yaml_path, "w") as f:
+        yaml.dump(l10n_config, f)
+    print("✓ Created l10n.yaml configuration file")
+    return True

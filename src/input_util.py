@@ -4,13 +4,6 @@ from typing import List
 from src.models import UserInput
 
 
-def select_resouce_package(packages: List[str]) -> str:
-    """
-    Selects the resource package
-    """
-    return "hello"
-
-
 def take_user_input() -> UserInput:
     """
     Takes the user input
