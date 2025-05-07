@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from typing import List
 
 from ruamel.yaml import YAML
 
@@ -51,7 +52,9 @@ def create_root_molos_yaml(path: Path, project_name: str) -> None:
     print("Created melos.yaml at root")
 
 
-def add_resolution_workspace_to_packages(pubspec_path: Path, package_name: str) -> None:
+def add_resolution_workspace_to_packages(
+    package_or_app_path: Path, package_name: str
+) -> None:
     """
     Adds 'resolution: workspace' to the pubspec.yaml of each package in the packages directory.
 
@@ -62,21 +65,58 @@ def add_resolution_workspace_to_packages(pubspec_path: Path, package_name: str) 
     yaml.indent(mapping=2, sequence=4, offset=2)
     yaml.preserve_quotes = True
 
-    if not pubspec_path.exists():
-        print(f"⚠️ Skipping {package_name}, pubspec.yaml not found.")
+    if not package_or_app_path.exists():
+        print(
+            f"Skipping {package_name}, pubspec.yaml not found.(on workspace resolution)"
+        )
         sys.exit()
 
     try:
-        with pubspec_path.open("r") as f:
+        with package_or_app_path.open("r") as f:
             data = yaml.load(f)
 
         data["resolution"] = "workspace"
 
-        with pubspec_path.open("w") as f:
+        with package_or_app_path.open("w") as f:
             yaml.dump(data, f)
 
-        print(f"Added 'resolution: workspace' to {pubspec_path}")
+        print(f"Added 'resolution: workspace' to {package_or_app_path}")
 
     except Exception as e:
-        print(f" Failed to update {pubspec_path}: {e}")
+        print(f" Failed to update {package_or_app_path}: {e}")
         sys.exit()
+
+
+def add_to_workspace(monorepo_path: Path, apps: List[str], packages: List[str]):
+    """
+    Adds the provided apps and packages to the workspace section of the root pubspec.yaml.
+
+    Args:
+        monorepo_path: Path to the root
+        apps: List of app names to be added to the workspace.
+        packages: List of package names to be added to the workspace.
+    """
+    yaml = YAML()
+    yaml.indent(mapping=2, sequence=4, offset=2)
+    yaml.preserve_quotes = True
+    pubspec_path = monorepo_path / "pubspec.yaml"
+
+    with pubspec_path.open("r") as f:
+        pubspec_data = yaml.load(f)
+    if "workspace" not in pubspec_data:
+        pubspec_data["workspace"] = []
+    workspace_entries = pubspec_data["workspace"]
+    for package in packages:
+        package_path = f"packages/{package}"
+        if package_path not in workspace_entries:
+            workspace_entries.append(package_path)
+    for app in apps:
+        app_path = f"apps/{app}"
+        if app_path not in workspace_entries:
+            workspace_entries.append(app_path)
+    with pubspec_path.open("w") as f:
+        yaml.dump(
+            pubspec_data,
+            f,
+        )
+    print(f"Updated workspace in {pubspec_path} with apps and packages.")

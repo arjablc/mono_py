@@ -16,9 +16,7 @@ def add_package(
 
     Args:
         pubspec_dir: The directory where the pubspec.yaml is located.
-        package_name: The name of the package to add.
-        dev: If True, add as a dev dependency.
-
+        package_name: The name of the package to add. dev: If True, add as a dev dependency.
     Returns:
         True if the command succeeded, False otherwise.
     """
@@ -49,10 +47,16 @@ def create_flutter_templates(monorepo_path: Path, apps: list, is_app: bool):
 
     with ThreadPoolExecutor() as executor:
         if is_app:
-            executor.map(lambda app: single_flutter_app_template(app_path, app), apps)
+            list(
+                executor.map(
+                    lambda app: single_flutter_app_template(app_path, app), apps
+                )
+            )
         else:
-            executor.map(
-                lambda app: single_flutter_package_template(app_path, app), apps
+            list(
+                executor.map(
+                    lambda app: single_flutter_package_template(app_path, app), apps
+                )
             )
 
 
