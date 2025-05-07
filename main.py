@@ -1,10 +1,4 @@
-import sys
-from pathlib import Path
-
-from input_util import take_user_input
-from models import UserInput
-from package_util import add_package, create_flutter_templates
-from yaml_util import add_to_workspace, create_root_molos_yaml, create_root_pubspec_yaml
+from src.input_util import take_user_input
 
 
 def main():
