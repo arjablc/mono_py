@@ -1,8 +1,10 @@
 import sys
-from pathlib import Path
+from pathlib import Path 
 from typing import List
 
 from ruamel.yaml import YAML
+from src.output_util import output, OutputType
+
 
 
 def create_root_pubspec_yaml(path: Path, project_name: str) -> None:
@@ -28,10 +30,10 @@ def create_root_pubspec_yaml(path: Path, project_name: str) -> None:
     with pubspec_path.open("w") as f:
         yaml.dump(pubspec_data, f)
 
-    print(f"📄 Created root pubspec.yaml at {pubspec_path}")
+    output(f"Created root pubspec.yaml at {pubspec_path}", OutputType.SUCCESS)
 
 
-def create_root_molos_yaml(path: Path, project_name: str) -> None:
+def create_root_melos_yaml(path: Path, project_name: str) -> None:
     """
     Creates the melos.yaml file for the monorepo workspace with app and package structure.
 
@@ -49,7 +51,7 @@ def create_root_molos_yaml(path: Path, project_name: str) -> None:
     with melos_path.open("w") as f:
         yaml.dump(melos_data, f)
 
-    print("Created melos.yaml at root")
+    output("Created melos.yaml at root", OutputType.SUCCESS)
 
 
 def add_resolution_workspace_to_packages(
@@ -66,8 +68,9 @@ def add_resolution_workspace_to_packages(
     yaml.preserve_quotes = True
 
     if not package_or_app_path.exists():
-        print(
-            f"Skipping {package_name}, pubspec.yaml not found.(on workspace resolution)"
+        output(
+            f"Skipping {package_name}, pubspec.yaml not found (on workspace resolution)",
+            OutputType.ERROR
         )
         sys.exit()
 
@@ -80,10 +83,10 @@ def add_resolution_workspace_to_packages(
         with package_or_app_path.open("w") as f:
             yaml.dump(data, f)
 
-        print(f"Added 'resolution: workspace' to {package_or_app_path}")
+        output(f"Added 'resolution: workspace' to {package_or_app_path}", OutputType.SUCCESS)
 
     except Exception as e:
-        print(f" Failed to update {package_or_app_path}: {e}")
+        output(f"Failed to update {package_or_app_path}: {e}", OutputType.ERROR)
         sys.exit()
 
 
@@ -119,7 +122,7 @@ def add_to_workspace(monorepo_path: Path, apps: List[str], packages: List[str]):
             pubspec_data,
             f,
         )
-    print(f"Updated workspace in {pubspec_path} with apps and packages.")
+    output(f"Updated workspace in {pubspec_path} with apps and packages.", OutputType.SUCCESS)
 
 
 def create_l10n_yaml(path: Path, is_res: bool, res_package: str) -> bool:
@@ -138,7 +141,8 @@ def create_l10n_yaml(path: Path, is_res: bool, res_package: str) -> bool:
         "template-arb-file": "app_en.arb",
         "output-localization-file": "app_localizations.dart",
         "output-class": "AppLocalizations",
-        "nullable-getter": "false",
+        "nullable-getter": False,
+        "synthetic-package": False,
     }
     l10n_yaml_path = path / "l10n.yaml"
     yaml = YAML()
@@ -147,5 +151,5 @@ def create_l10n_yaml(path: Path, is_res: bool, res_package: str) -> bool:
 
     with open(l10n_yaml_path, "w") as f:
         yaml.dump(l10n_config, f)
-    print("✓ Created l10n.yaml configuration file")
+    output(f"Created l10n.yaml configuration file for {path}", OutputType.SUCCESS)
     return True

@@ -3,7 +3,8 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from yaml_util import add_resolution_workspace_to_packages
+from src.yaml import add_resolution_workspace_to_packages
+from src.output_util import output, OutputType
 
 
 def add_package(
@@ -27,10 +28,10 @@ def add_package(
     cmd.append(package_name)
 
     try:
-        subprocess.run(cmd, cwd=pub_path, check=True)
-        print(f"added {package_name} as {'as dev' if is_dev else ''}")
+        subprocess.run(cmd, cwd=pub_path, check=True, capture_output=True)
+        output(f"Added {package_name} as {'dev dependency' if is_dev else 'dependency'}", OutputType.SUCCESS)
     except subprocess.CalledProcessError:
-        print(f" Failed to add package '{package_name}' in {pub_path}")
+        output(f"Failed to add package '{package_name}' in {pub_path}", OutputType.ERROR)
         sys.exit()
 
 
@@ -66,15 +67,15 @@ def single_flutter_app_template(app_path: Path, app: str) -> bool:
     """
     cmd = ["flutter", "create", app]
     try:
-        print(f"creating for {app}")
+        output(f"Creating Flutter app: {app}", OutputType.INFO)
         subprocess.run(cmd, cwd=app_path, check=True, capture_output=True)
     except subprocess.CalledProcessError:
-        print(f"failed to create app for {app}")
+        output(f"Failed to create app for {app}", OutputType.ERROR)
         return False
 
     app_pubspec_path = app_path / app / "pubspec.yaml"
     add_resolution_workspace_to_packages(app_pubspec_path, app)
-    print(f"created for {app}")
+    output(f"Successfully created Flutter app: {app}", OutputType.SUCCESS)
     return True
 
 
@@ -84,13 +85,13 @@ def single_flutter_package_template(package_path: Path, package: str) -> bool:
     """
     cmd = ["flutter", "create", "-t", "package", package]
     try:
-        print(f"creating for {package}")
+        output(f"Creating Flutter package: {package}", OutputType.INFO)
         subprocess.run(cmd, cwd=package_path, check=True, capture_output=True)
     except subprocess.CalledProcessError:
-        print(f"failed to create package for {package}")
+        output(f"Failed to create package for {package}", OutputType.ERROR)
         return False
 
     package_pubspec_path = package_path / package / "pubspec.yaml"
     add_resolution_workspace_to_packages(package_pubspec_path, package)
-    print(f"created for {package}")
+    output(f"Successfully created Flutter package: {package}", OutputType.SUCCESS)
     return True
