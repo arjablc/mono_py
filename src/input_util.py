@@ -2,6 +2,7 @@ import re
 from typing import List
 
 from src.models import UserInput
+from src.output_util import OutputType, output
 
 
 def take_user_input() -> UserInput:
@@ -19,7 +20,7 @@ def take_user_input() -> UserInput:
             if res:
                 break
         else:
-            print("Project Name can't be empty")
+            output("Project Name can't be empty", OutputType.ERROR)
 
     RES_PACKAGE = project_name + "_resources"
     COMP_PACKAGE = project_name + "_components"
@@ -38,17 +39,17 @@ def take_user_input() -> UserInput:
     #         break
     #
     while True:
-        print("Enter the apps:(seperated by a comma)")
+        output("Enter the apps (separated by a comma):", OutputType.INFO)
         apps_str = input("apps:")
         apps = [app.strip() for app in apps_str.split(",")] if apps_str else []
 
         are_apps_valid = validate_names(apps, project_name)
-
         are_pacakges_valid = validate_names(packages, project_name)
 
         if are_pacakges_valid and are_apps_valid:
             break
 
+    output("Input validation successful", OutputType.SUCCESS)
     return UserInput(project_name, apps, packages)
 
 
@@ -57,8 +58,9 @@ def validate_names(names: List[str], project_name: str) -> bool:
     wrapper for multiple package/app names
     """
     if project_name in names:
-        print(
-            "Invalid package or app name.(package or app name cannot be same to the root project name)"
+        output(
+            "Invalid package or app name. Package or app name cannot be same as the root project name",
+            OutputType.ERROR
         )
         return False
 
@@ -75,11 +77,13 @@ def validate_name_format(name: str) -> bool:
     Return a bool
         True if matches
         False if Doesn't
-
     """
     FLUTTER_PKG_REG = re.compile(r"^[a-z](?:[a-z0-9_]*[a-z0-9])?$")
     res = re.match(FLUTTER_PKG_REG, name)
     if res is None:
-        print(f"Invalid name for {name}")
+        output(
+            f"Invalid name format for '{name}'. Name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores.",
+            OutputType.ERROR
+        )
         return False
     return True

@@ -1,5 +1,9 @@
 import shutil
 import subprocess
+from pathlib import Path
+from typing import List
+
+from src.output_util import OutputType, output
 
 
 def is_melos_installed() -> bool:
@@ -31,16 +35,37 @@ def activate_melos() -> bool:
     Returns:
         True if Melos is successfully activated or already present, False otherwise.
     """
-    print("🔍 Checking if Melos is installed...")
+    output("Checking if Melos is installed...", OutputType.INFO)
 
     try:
         subprocess.run(["dart", "pub", "global", "activate", "melos"], check=True)
-        print(" Melos has been activated globally.")
+        output("Melos has been activated globally.", OutputType.SUCCESS)
         return True
     except subprocess.CalledProcessError as e:
-        print(" Failed to activate Melos.")
-        print(f" Error: {e}")
+        output("Failed to activate Melos.", OutputType.ERROR)
+        output(f"Error: {e}", OutputType.ERROR)
         return False
     except FileNotFoundError:
-        print(" Dart SDK not found. Make sure Dart is installed and in your PATH.")
+        output(
+            "Dart SDK not found. Make sure Dart is installed and in your PATH.",
+            OutputType.ERROR,
+        )
+        return False
+
+
+def melos_command(path: Path, commands: List[str]):
+    output("Running melos commands", OutputType.INFO)
+    try:
+        subprocess.run(["melos", *commands], check=True, cwd=path)
+        output("Melos command executed successfully.", OutputType.SUCCESS)
+        return True
+    except subprocess.CalledProcessError as e:
+        output("Failed to run Melos command.", OutputType.ERROR)
+        output(f"Error: {e}", OutputType.ERROR)
+        return False
+    except FileNotFoundError:
+        output(
+            "Dart SDK not found. Make sure Dart is installed and in your PATH.",
+            OutputType.ERROR,
+        )
         return False

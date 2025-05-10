@@ -1,10 +1,10 @@
 import sys
-from pathlib import Path 
+from pathlib import Path
 from typing import List
 
 from ruamel.yaml import YAML
-from src.output_util import output, OutputType
 
+from src.output_util import OutputType, output
 
 
 def create_root_pubspec_yaml(path: Path, project_name: str) -> None:
@@ -33,7 +33,7 @@ def create_root_pubspec_yaml(path: Path, project_name: str) -> None:
     output(f"Created root pubspec.yaml at {pubspec_path}", OutputType.SUCCESS)
 
 
-def create_root_melos_yaml(path: Path, project_name: str) -> None:
+def create_root_melos_yaml(path: Path, project_name: str, packages: List[str]) -> None:
     """
     Creates the melos.yaml file for the monorepo workspace with app and package structure.
 
@@ -45,7 +45,25 @@ def create_root_melos_yaml(path: Path, project_name: str) -> None:
     yaml.indent(mapping=2, sequence=4, offset=2)
     yaml.preserve_quotes = True
 
-    melos_data = {"name": project_name, "packages": ["packages/**", "apps/**"]}
+    melos_data = {
+        "name": project_name,
+        "packages": ["packages/**", "apps/**"],
+        "scripts": {
+            "analyze": {"exec": "dart analyze ."},
+            "loc": {
+                "exec": "flutter gen-l10n",
+                "packageFilters": {"fileExists": "l10n.yaml"},
+            },
+            "svg": {"run": "melos exec --depends-on svg_bin -- dart run svg_bin "},
+            "br": {
+                "run": "'melos exec --depends-on build_runner -- dart run build_runner build --delete-conflicting-outputs'"
+            },
+            "release": {
+                "exec": "flutter build apk --release",
+                "packageFilters": {"ignore": packages},
+            },
+        },
+    }
 
     melos_path = path / "melos.yaml"
     with melos_path.open("w") as f:
@@ -70,7 +88,7 @@ def add_resolution_workspace_to_packages(
     if not package_or_app_path.exists():
         output(
             f"Skipping {package_name}, pubspec.yaml not found (on workspace resolution)",
-            OutputType.ERROR
+            OutputType.ERROR,
         )
         sys.exit()
 
@@ -83,7 +101,10 @@ def add_resolution_workspace_to_packages(
         with package_or_app_path.open("w") as f:
             yaml.dump(data, f)
 
-        output(f"Added 'resolution: workspace' to {package_or_app_path}", OutputType.SUCCESS)
+        output(
+            f"Added 'resolution: workspace' to {package_or_app_path}",
+            OutputType.SUCCESS,
+        )
 
     except Exception as e:
         output(f"Failed to update {package_or_app_path}: {e}", OutputType.ERROR)
@@ -122,7 +143,10 @@ def add_to_workspace(monorepo_path: Path, apps: List[str], packages: List[str]):
             pubspec_data,
             f,
         )
-    output(f"Updated workspace in {pubspec_path} with apps and packages.", OutputType.SUCCESS)
+    output(
+        f"Updated workspace in {pubspec_path} with apps and packages.",
+        OutputType.SUCCESS,
+    )
 
 
 def create_l10n_yaml(path: Path, is_res: bool, res_package: str) -> bool:
@@ -153,3 +177,38 @@ def create_l10n_yaml(path: Path, is_res: bool, res_package: str) -> bool:
         yaml.dump(l10n_config, f)
     output(f"Created l10n.yaml configuration file for {path}", OutputType.SUCCESS)
     return True
+
+
+def enable_flutter_gen(root_path: Path, res_package: str):
+    yaml = YAML()
+    yaml.indent(mapping=2, sequence=4, offset=2)
+    yaml.preserve_quotes = True
+
+    pubspec_path = root_path / "pacakges" / res_package
+
+    if not pubspec_path.exists():
+        output(f"pubspec didn't exits for {res_package}", OutputType.ERROR)
+
+    with pubspec_path.open("r") as f:
+        pubspec_data = yaml.load(f)
+
+    if "flutter" not in pubspec_data:
+        output(f"didn't find flutter in pubpspec for {res_package}", OutputType.ERROR)
+        return
+
+    if not isinstance(pubspec_data, dict):
+        return
+    if "generate" not in pubspec_data or not pubspec_data["generate"]:
+        pubspec_data["generate"] = True
+        output(f"Set generate: true for {res_package}", OutputType.SUCCESS)
+    else:
+        output(f"generate: true already set for {res_package}", OutputType.SUCCESS)
+    with pubspec_path.open("w") as f:
+        yaml.dump(
+            pubspec_data,
+            f,
+        )
+    output(
+        f"Updated workspace in {pubspec_path} with apps and packages.",
+        OutputType.SUCCESS,
+    )

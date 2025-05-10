@@ -3,8 +3,8 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from src.output_util import OutputType, output
 from src.yaml import add_resolution_workspace_to_packages
-from src.output_util import output, OutputType
 
 
 def add_package(
@@ -29,9 +29,14 @@ def add_package(
 
     try:
         subprocess.run(cmd, cwd=pub_path, check=True, capture_output=True)
-        output(f"Added {package_name} as {'dev dependency' if is_dev else 'dependency'}", OutputType.SUCCESS)
+        output(
+            f"Added {package_name} as {'dev dependency' if is_dev else 'dependency'}",
+            OutputType.SUCCESS,
+        )
     except subprocess.CalledProcessError:
-        output(f"Failed to add package '{package_name}' in {pub_path}", OutputType.ERROR)
+        output(
+            f"Failed to add package '{package_name}' in {pub_path}", OutputType.ERROR
+        )
         sys.exit()
 
 
@@ -95,3 +100,13 @@ def single_flutter_package_template(package_path: Path, package: str) -> bool:
     add_resolution_workspace_to_packages(package_pubspec_path, package)
     output(f"Successfully created Flutter package: {package}", OutputType.SUCCESS)
     return True
+
+
+def pub_get(path: Path):
+    try:
+        subprocess.run(
+            ["flutter", "pub", "get"], check=True, capture_output=True, cwd=path
+        )
+        output(f"Ran pub get at {path}", OutputType.SUCCESS)
+    except subprocess.SubprocessError:
+        output(f"Failed pub get at {path}", OutputType.ERROR)
