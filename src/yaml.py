@@ -158,7 +158,7 @@ def create_l10n_yaml(path: Path, is_res: bool, res_package: str) -> bool:
     if is_res:
         arb_dir = "lib/l10n"
     else:
-        arb_dir = f"../{res_package}/l10n"
+        arb_dir = f"../../packages/{res_package}/l10n"
 
     l10n_config = {
         "arb-dir": arb_dir,
